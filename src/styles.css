@@ -12,6 +12,7 @@
   --line: #ede6d6;
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --gutter: 16px;
+  --head-h: 88px; /* fixed header height */
 }
 
 /* ---------- Reveal on scroll ---------- */
@@ -132,6 +133,16 @@
   box-sizing: border-box;
 }
 
+/* anchors without smooth scroll: stop below the fixed header */
+html {
+  scroll-padding-top: 112px;
+}
+@media (max-width: 800px) {
+  html {
+    scroll-padding-top: 100px;
+  }
+}
+
 body {
   margin: 0;
   background: var(--cream);
@@ -161,14 +172,20 @@ h4 {
 
 /* ---------- Header ---------- */
 .site-header {
-  position: absolute;
+  position: fixed;
   inset: 0 0 auto 0;
-  z-index: 10;
-  height: 138px;
+  z-index: 50;
+  height: var(--head-h);
   padding: 0 108px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  background: #fff;
+  transition: box-shadow 0.3s ease;
+}
+/* soft shadow once the page scrolls */
+.site-header.scrolled {
+  box-shadow: 0 1px 0 rgba(24, 20, 16, 0.06), 0 10px 28px -18px rgba(24, 20, 16, 0.35);
 }
 .logo {
   width: 157px;
@@ -203,7 +220,9 @@ h4 {
 .hero {
   --edge: max(5.84vw, 34px); /* torn-paper bottom edge */
   position: relative;
-  height: 1114px;
+  height: 100vh;
+  height: 100svh; /* full screen, stable on mobile toolbars */
+  min-height: 560px;
   overflow: hidden;
   -webkit-mask:
     linear-gradient(#000 0 0) top / 100% calc(100% - var(--edge) + 1px) no-repeat,
@@ -220,6 +239,42 @@ h4 {
   object-fit: cover;
   object-position: center 60%;
 }
+/* construction photo seen through a soft circle around the mouse */
+@property --r {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+.hero-reveal {
+  --r: 0px;
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  -webkit-mask: radial-gradient(
+    circle var(--r) at var(--mx, 50%) var(--my, 50%),
+    #000 0%,
+    rgba(0, 0, 0, 0.8) 25%,
+    rgba(0, 0, 0, 0.45) 50%,
+    rgba(0, 0, 0, 0.15) 75%,
+    transparent 100%
+  );
+  mask: radial-gradient(
+    circle var(--r) at var(--mx, 50%) var(--my, 50%),
+    #000 0%,
+    rgba(0, 0, 0, 0.8) 25%,
+    rgba(0, 0, 0, 0.45) 50%,
+    rgba(0, 0, 0, 0.15) 75%,
+    transparent 100%
+  );
+  transition: --r 0.5s var(--ease-out), opacity 0.4s ease;
+}
+.hero-reveal.on {
+  --r: clamp(200px, 20vw, 330px);
+  opacity: 1;
+  transition: --r 0.7s var(--ease-out), opacity 0.25s ease;
+}
+
 /* soft shade so white text reads on the photo */
 .hero::after {
   content: '';
@@ -235,7 +290,7 @@ h4 {
   position: absolute;
   z-index: 2;
   left: 50%;
-  top: 50%;
+  top: calc(50% + var(--head-h) / 2); /* centre in the area below the header */
   width: 760px;
   max-width: calc(100% - 2 * var(--gutter));
   transform: translate(-50%, -50%);
@@ -429,6 +484,18 @@ h4 {
   width: 100%;
   aspect-ratio: 561 / 736.5;
   object-fit: cover;
+}
+.tl-media img.natural {
+  aspect-ratio: auto;
+  height: auto;
+}
+/* landscape image: centred vertically in the band */
+@media (min-width: 801px) {
+  .tl-band .tl-media.natural {
+    align-self: center;
+    padding-top: 0;
+    margin-top: 80px; /* evens out the band's larger bottom padding */
+  }
 }
 .tl-text {
   padding-top: 191px;
@@ -1135,11 +1202,10 @@ h4 {
 @media (max-width: 800px) {
   :root {
     --gutter: 28px;
+    --head-h: 76px;
   }
   .site-header {
-    position: absolute;
-    height: auto;
-    padding: 16px var(--gutter);
+    padding: 0 var(--gutter);
   }
   .site-header .logo {
     width: 120px;
@@ -1306,7 +1372,7 @@ h4 {
     overflow: hidden;
   }
   .hero {
-    height: 720px;
+    min-height: 520px;
   }
   .hero::after {
     background:

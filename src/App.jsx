@@ -132,6 +132,15 @@ function Header() {
     return () => mq.removeEventListener('change', onChange);
   }, []);
 
+  // compact header after a little scroll
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 40);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   // restart scroll before the anchor handler runs, then close
   const go = () => {
     window.__lenis?.start();
@@ -140,7 +149,7 @@ function Header() {
   };
 
   return (
-    <nav className="site-header" aria-label="Principale">
+    <nav className={`site-header${scrolled ? ' scrolled' : ''}`} aria-label="Principale">
       <a href="#home" aria-label="San Placido, home">
         <img src="/img/logo.svg" alt="San Placido" className="logo" />
       </a>
@@ -210,10 +219,56 @@ function Header() {
   );
 }
 
+// "Torch" over the hero: the construction-site photo shows through a soft
+// circle that follows the mouse. Mouse/pen only; touch screens keep the plain photo.
+function useHeroReveal() {
+  const hero = useRef(null);
+  const layer = useRef(null);
+  useEffect(() => {
+    const el = hero.current;
+    const lay = layer.current;
+    if (!el || !lay || !window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+    const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let tx = 0, ty = 0, x = 0, y = 0, raf = 0;
+    const paint = () => {
+      x += (tx - x) * 0.16;
+      y += (ty - y) * 0.16;
+      lay.style.setProperty('--mx', `${x}px`);
+      lay.style.setProperty('--my', `${y}px`);
+      raf = Math.abs(tx - x) + Math.abs(ty - y) > 0.3 ? requestAnimationFrame(paint) : 0;
+    };
+    const move = (e) => {
+      if (e.pointerType === 'touch') return;
+      const r = el.getBoundingClientRect();
+      tx = e.clientX - r.left;
+      ty = e.clientY - r.top;
+      if (still || !lay.classList.contains('on')) {
+        x = tx;
+        y = ty;
+      }
+      lay.classList.add('on');
+      if (!raf) raf = requestAnimationFrame(paint);
+    };
+    const leave = () => lay.classList.remove('on');
+    el.addEventListener('pointermove', move);
+    el.addEventListener('pointerleave', leave);
+    return () => {
+      cancelAnimationFrame(raf);
+      el.removeEventListener('pointermove', move);
+      el.removeEventListener('pointerleave', leave);
+    };
+  }, []);
+  return { hero, layer };
+}
+
 function Hero() {
+  const { hero, layer } = useHeroReveal();
   return (
-    <section className="hero" id="home">
+    <section className="hero" id="home" ref={hero}>
       <img src="/img/hero.webp" alt="Chiostro del Monastero di San Placido con la Cuba" className="hero-bg" />
+      <div className="hero-reveal" ref={layer} aria-hidden>
+        <img src="/img/hero-cantiere.webp" alt="" className="hero-bg" decoding="async" />
+      </div>
       <div className="hero-text">
         <h1>
           Monastero
@@ -289,8 +344,12 @@ function TimelineItem({ item }) {
   return (
     <section className={cls} style={{ background: item.bg }}>
       <div className="tl-row">
-        <div className="tl-media" data-reveal>
-          <img src={item.img} alt={item.title.join(' ')} />
+        <div className={`tl-media${item.imgNatural ? ' natural' : ''}`} data-reveal>
+          <img
+            src={item.img}
+            alt={item.title.join(' ')}
+            className={item.imgNatural ? 'natural' : undefined}
+          />
         </div>
         <div className="tl-text">
           <span className="tl-dot" aria-hidden />

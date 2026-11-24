@@ -25,7 +25,9 @@ export function useSmoothScroll() {
       const el = document.querySelector(hash);
       if (!el) return;
       e.preventDefault();
-      lenis.scrollTo(el, { offset: hash === '#home' ? 0 : -40 });
+      // fixed header: land below its compact height (88px desktop, 76px mobile)
+      const head = window.innerWidth <= 800 ? 76 : 88;
+      lenis.scrollTo(el, { offset: hash === '#home' ? 0 : -(head + 24) });
     };
     document.addEventListener('click', onClick);
     return () => {

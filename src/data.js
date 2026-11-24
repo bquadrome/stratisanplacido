@@ -70,7 +70,8 @@ export const timeline = [
     bg: '#ccbb8e',
     side: 'right',
     dark: true,
-    img: '/img/tl-rilievo.png',
+    img: '/img/tl-rilievo.webp',
+    imgNatural: true, // orizzontale: proporzioni originali, niente taglio
     date: '1867',
     era: 'Metà XIX secolo',
     title: ['Il rilievo'],
